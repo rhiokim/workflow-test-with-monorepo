@@ -34,6 +34,23 @@ jobs:
           echo "environment=${{ steps.branch.outputs._2 }}" >> $GITHUB_ENV
           echo "version=${{ steps.branch.outputs._3 }}" >> $GITHUB_ENV
 
+      - name: Switch dev -> development
+        if: github.event.inputs.environment == 'dev'
+        run: |
+          echo "dotenv=development" >> $GITHUB_ENV
+          cat ./packages/okky-web/README.md
+
+
+      - name: Switch staging -> staging
+        if: github.event.inputs.environment == 'staging'
+        run: |
+          echo "dotenv=staging" >> $GITHUB_ENV
+
+      - name: Switch prod -> production
+        if: github.event.inputs.environment == 'prod'
+        run: |
+          echo "dotenv=production" >> $GITHUB_ENV
+
       - uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
