@@ -38,8 +38,6 @@ jobs:
         if: ${{ steps.branch.outputs._2 }} == 'dev'
         run: |
           echo "dotenv=development" >> $GITHUB_ENV
-          cat ./packages/okky-web/README.md
-
 
       - name: Switch staging -> staging
         if: ${{ steps.branch.outputs._2 }} == 'staging'
