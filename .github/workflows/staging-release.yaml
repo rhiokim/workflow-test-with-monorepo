@@ -1,0 +1,77 @@
+name: Release for Staging
+
+on:
+  pull_request:
+    types: [closed]
+
+env:
+  REGISTRY: 'ghcr.io'
+  GHCR_PACKAGE_BASE_URL: 'https://github.com/rhiokim/seed-monorepo/pkgs/container/seed-monorepo%2F'
+
+jobs:
+  release-with-branch:
+    if: github.event.pull_request.merged == true & startsWith(github.event.comment.body, 'release/')
+    name: Release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        node-version: [16]
+        os: [ubuntu-latest]
+
+    steps:
+      - uses: jungwinter/split@v1
+        id: branch
+        with:
+          msg: ${{ github.event.pull_request.head.ref }}
+          seperator: '/'
+
+      - name: Parse Action & Set Environment
+        run: |
+          echo ${{ env.GITHUB_REPOSITORY }}
+          echo "action=${{ steps.branch.outputs._0 }}" >> $GITHUB_ENV
+          echo "package=${{ steps.branch.outputs._1 }}" >> $GITHUB_ENV
+          echo "environment=${{ steps.branch.outputs._2 }}" >> $GITHUB_ENV
+          echo "version=${{ steps.branch.outputs._3 }}" >> $GITHUB_ENV
+
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+            # reference - https://github.com/docker/setup-buildx-action#install-by-default
+      - name: Set up Docker Buildx environment
+        uses: docker/setup-buildx-action@v2
+
+      # reference - https://github.com/docker/login-action#github-container-registry
+      # - https://docs.github.com/en/packages/managing-github-packages-using-github-actions-workflows/publishing-and-installing-a-package-with-github-actions#upgrading-a-workflow-that-accesses-ghcrio
+      - name: Login to Github Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # reference - https://github.com/docker/metadata-action
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ steps.repo.outputs._0 }}/${{ github.event.inputs.package }}-${{ github.event.inputs.environment }}
+          tags: |
+            type=sha,format=short
+            type=raw,latest
+            type=ref,event=tag
+
+      # reference - https://github.com/docker/build-push-action
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v3
+        with:
+          # context: ./packages/${{ github.event.inputs.package }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            environment=${{ github.event.inputs.environment }}
+            dotenv=${{ env.dotenv }}
+            package=${{ github.event.inputs.package }}
+            token=${{ secrets.GITHUB_TOKEN }}
+            sha=${{ github.event.inputs.sha }}
