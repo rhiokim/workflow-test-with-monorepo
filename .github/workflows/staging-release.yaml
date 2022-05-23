@@ -35,17 +35,17 @@ jobs:
           echo "version=${{ steps.branch.outputs._3 }}" >> $GITHUB_ENV
 
       - name: Switch dev -> development
-        if: ${{ steps.branch.outputs._1 }} == 'dev'
+        if: contains(steps.branch.outputs._1, 'dev')
         run: |
           echo "dotenv=development" >> $GITHUB_ENV
 
       - name: Switch staging -> staging
-        if: ${{ steps.branch.outputs._1 }} == 'staging'
+        if: contains(steps.branch.outputs._1, 'stag')
         run: |
           echo "dotenv=staging" >> $GITHUB_ENV
 
       - name: Switch prod -> production
-        if: ${{ steps.branch.outputs._1 }} == 'prod'
+        if: contains(steps.branch.outputs._1, 'prod')
         run: |
           echo "dotenv=production" >> $GITHUB_ENV
 
