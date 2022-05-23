@@ -1,6 +1,6 @@
 {
-  "name": "workflow-test",
-  "version": "0.0.7",
+  "name": "workflow-test-with-monorepo",
+  "version": "0.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
