@@ -30,22 +30,22 @@ jobs:
         run: |
           echo ${{ env.GITHUB_REPOSITORY }}
           echo "action=${{ steps.branch.outputs._0 }}" >> $GITHUB_ENV
-          echo "package=${{ steps.branch.outputs._1 }}" >> $GITHUB_ENV
-          echo "environment=${{ steps.branch.outputs._2 }}" >> $GITHUB_ENV
+          echo "environment=${{ steps.branch.outputs._1 }}" >> $GITHUB_ENV
+          echo "package=${{ steps.branch.outputs._2 }}" >> $GITHUB_ENV
           echo "version=${{ steps.branch.outputs._3 }}" >> $GITHUB_ENV
 
       - name: Switch dev -> development
-        if: ${{ steps.branch.outputs._2 }} == 'dev'
+        if: ${{ steps.branch.outputs._1 }} == 'dev'
         run: |
           echo "dotenv=development" >> $GITHUB_ENV
 
       - name: Switch staging -> staging
-        if: ${{ steps.branch.outputs._2 }} == 'staging'
+        if: ${{ steps.branch.outputs._1 }} == 'staging'
         run: |
           echo "dotenv=staging" >> $GITHUB_ENV
 
       - name: Switch prod -> production
-        if: ${{ steps.branch.outputs._2 }} == 'prod'
+        if: ${{ steps.branch.outputs._1 }} == 'prod'
         run: |
           echo "dotenv=production" >> $GITHUB_ENV
 
