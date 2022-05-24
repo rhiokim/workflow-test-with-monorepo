@@ -1,8 +1,8 @@
-name: Release for Staging
+name: Release for Development
 
 on:
   pull_request:
-    branches: [main]
+    branches: [develop]
     types: [closed]
 
 env:
@@ -11,7 +11,7 @@ env:
 
 jobs:
   release-branch-merged:
-    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/')
+    if: github.event.pull_request.merged == true
     name: Release
     runs-on: ${{ matrix.os }}
     strategy:
@@ -26,38 +26,23 @@ jobs:
           msg: ${{ github.event.pull_request.head.ref }}
           seperator: '/'
 
-      # TODO:
-      # - 공통 모듈인 경우에는 `environment` 가 없을 수도 있다.
-      # - 공통 모듈인 경우에는 `package` 에 따라 workflow 가 달라진다.
+      # NOTE:
+      # (feature|fix|docs|tests)/package/issue-1234
       - name: Parse Action & Set Environment
         run: |
           echo ${{ env.GITHUB_REPOSITORY }}
-          echo "action=${{ steps.branch.outputs._0 }}" >> $GITHUB_ENV
-          echo "environment=${{ steps.branch.outputs._1 }}" >> $GITHUB_ENV
-          echo "package=${{ steps.branch.outputs._2 }}" >> $GITHUB_ENV
-          echo "version=${{ steps.branch.outputs._3 }}" >> $GITHUB_ENV
-
-      - name: Switch dev -> development
-        if: contains(steps.branch.outputs._1, 'dev')
-        run: |
+          echo "type=${{ steps.branch.outputs._0 }}" >> $GITHUB_ENV
+          echo "environment=dev" >> $GITHUB_ENV
+          echo "package=${{ steps.branch.outputs._1 }}" >> $GITHUB_ENV
+          echo "issue=${{ steps.branch.outputs._2 }}" >> $GITHUB_ENV
           echo "dotenv=development" >> $GITHUB_ENV
-
-      - name: Switch staging -> staging
-        if: contains(steps.branch.outputs._1, 'stag')
-        run: |
-          echo "dotenv=staging" >> $GITHUB_ENV
-
-      - name: Switch prod -> production
-        if: contains(steps.branch.outputs._1, 'prod')
-        run: |
-          echo "dotenv=production" >> $GITHUB_ENV
 
       - uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 1
 
-            # reference - https://github.com/docker/setup-buildx-action#install-by-default
+      # reference - https://github.com/docker/setup-buildx-action#install-by-default
       - name: Set up Docker Buildx environment
         uses: docker/setup-buildx-action@v2
 
