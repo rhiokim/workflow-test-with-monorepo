@@ -33,24 +33,10 @@ jobs:
         run: |
           echo ${{ env.GITHUB_REPOSITORY }}
           echo "action=${{ steps.branch.outputs._0 }}" >> $GITHUB_ENV
-          echo "environment=${{ steps.branch.outputs._1 }}" >> $GITHUB_ENV
-          echo "package=${{ steps.branch.outputs._2 }}" >> $GITHUB_ENV
-          echo "version=${{ steps.branch.outputs._3 }}" >> $GITHUB_ENV
-
-      - name: Switch dev -> development
-        if: contains(steps.branch.outputs._1, 'dev')
-        run: |
-          echo "dotenv=development" >> $GITHUB_ENV
-
-      - name: Switch staging -> staging
-        if: contains(steps.branch.outputs._1, 'stag')
-        run: |
+          echo "environment=staging" >> $GITHUB_ENV
+          echo "package=${{ steps.branch.outputs._1 }}" >> $GITHUB_ENV
+          echo "version=${{ steps.branch.outputs._2 }}" >> $GITHUB_ENV
           echo "dotenv=staging" >> $GITHUB_ENV
-
-      - name: Switch prod -> production
-        if: contains(steps.branch.outputs._1, 'prod')
-        run: |
-          echo "dotenv=production" >> $GITHUB_ENV
 
       - uses: actions/checkout@v3
         with:
