@@ -1,6 +1,6 @@
 # workflow-test-with-monorepo
 
-## monorepo structure
+## Monorepo Structure
 
 ```sh
 packages
@@ -8,12 +8,17 @@ packages
   - bbb
 ```
 
-## release
+## Concepts
 
-```
-git switch -c release/dev/bbb/v0.0.0
-git push -u origin release/dev/bbb/v0.0.1
-merge
+## Development
+
+## Staging
+
+```sh
+# in main branch
+git switch -c release/bbb/v0.0.0
+git push -u origin release/bbb/v0.0.1
+merge into main
 
 will generated
 
