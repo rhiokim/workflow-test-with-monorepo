@@ -1,0 +1,84 @@
+name: Release for Production
+
+on:
+  push:
+    branches: [main]
+    tags:
+      # aaa/v0.0.0, aaa/v0.0.0-rc1, bbb/v0.0.0-next.0
+      - '[-_.a-zA-Z]+\/v[0-9]+\.[0-9]+\.[0-9]+-*[-_.a-zA-Z]*'
+
+env:
+  REGISTRY: 'ghcr.io'
+  GHCR_PACKAGE_BASE_URL: 'https://github.com/rhiokim/seed-monorepo/pkgs/container/seed-monorepo%2F'
+
+jobs:
+  push-create-tag:
+    if: startsWith(github.ref, 'refs/tags')
+    name: Release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        node-version: [16]
+        os: [ubuntu-latest]
+
+    steps:
+      - uses: jungwinter/split@v1
+        id: branch
+        with:
+          msg: ${{ github.ref }}
+          seperator: '/'
+
+      # TODO:
+      # - 공통 모듈인 경우에는 `environment` 가 없을 수도 있다.
+      # - 공통 모듈인 경우에는 `package` 에 따라 workflow 가 달라진다.
+      - name: Parse Action & Set Environment
+        run: |
+          echo ${{ env.GITHUB_REPOSITORY }}
+          echo "action=tag" >> $GITHUB_ENV
+          echo "environment=prod" >> $GITHUB_ENV
+          echo "package=${{ steps.branch.outputs._2 }}" >> $GITHUB_ENV
+          echo "version=${{ steps.branch.outputs._3 }}" >> $GITHUB_ENV
+          echo "dotenv=production" >> $GITHUB_ENV
+
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 1
+
+            # reference - https://github.com/docker/setup-buildx-action#install-by-default
+      - name: Set up Docker Buildx environment
+        uses: docker/setup-buildx-action@v2
+
+      # reference - https://github.com/docker/login-action#github-container-registry
+      # - https://docs.github.com/en/packages/managing-github-packages-using-github-actions-workflows/publishing-and-installing-a-package-with-github-actions#upgrading-a-workflow-that-accesses-ghcrio
+      - name: Login to Github Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # reference - https://github.com/docker/metadata-action
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ env.package }}
+          tags: |
+            type=sha,format=short
+            type=raw,latest
+            type=ref,event=tag
+
+      # reference - https://github.com/docker/build-push-action
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v3
+        with:
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            environment=${{ env.environment }}
+            dotenv=${{ env.dotenv }}
+            package=${{ env.package }}
+            token=${{ secrets.GITHUB_TOKEN }}
+            sha=${{ github.sha }}
