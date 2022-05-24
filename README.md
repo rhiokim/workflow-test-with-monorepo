@@ -1,5 +1,6 @@
 # workflow-test-with-monorepo
 
+
 ## Monorepo Structure
 
 ```sh
@@ -26,3 +27,10 @@ will generated
 // - ghcr.io/rhiokim/workflow-test-with-monorepo/bbb-dev:latest
 // - ghcr.io/rhiokim/workflow-test-with-monorepo/bbb-dev:sha-8e7f2f3
 ```
+
+## Actions
+
+| Environment | Status
+|-------------|--------
+| dev         | [![dev](https://github.com/rhiokim/workflow-test-with-monorepo/actions/workflows/release-dev.yaml/badge.svg)](https://github.com/rhiokim/workflow-test-with-monorepo/actions/workflows/release-dev.yaml)
+| staging     | [![staging](https://github.com/rhiokim/workflow-test-with-monorepo/actions/workflows/release-staging.yaml/badge.svg)](https://github.com/rhiokim/workflow-test-with-monorepo/actions/workflows/release-staging.yaml)
