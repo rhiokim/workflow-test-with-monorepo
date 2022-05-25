@@ -8,6 +8,15 @@ packages
   - bbb (nextjs)
 ```
 
+## Precondition
+
+* A new small development team (4~9)
+* Working with monorepo
+* Multi environments(development, test, staging, production) should be as similar as possible
+* Chat based co-working like Slack
+* Declarative GitOps with explicit branch name
+* Low learning curve
+
 ## Concepts
 
 ```sh
