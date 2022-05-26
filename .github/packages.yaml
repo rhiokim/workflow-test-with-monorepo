@@ -1,0 +1,4 @@
+aaa:
+  - 'packages/aaa/**'
+bbb:
+  - 'packages/bbb/**'
