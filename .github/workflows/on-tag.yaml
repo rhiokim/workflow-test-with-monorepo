@@ -1,0 +1,50 @@
+name: Release /w tag
+
+on:
+  push:
+    tags:
+      - dev/**
+      - staging/**
+
+env:
+  REGISTRY: 'ghcr.io'
+  GHCR_PACKAGE_BASE_URL: 'https://github.com/rhiokim/seed-monorepo/pkgs/container/seed-monorepo%2F'
+
+jobs:
+  init:
+    name: Parse tag
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        node-version: [16]
+        os: [ubuntu-latest]
+
+    steps:
+      - uses: rhiokim/split-by@master
+        id: tag
+        with:
+          string: ${{ github.event.pull_request.head.ref }}
+          split-by: '/'
+
+    outputs:
+      is-dev: ${{ steps.tag.outpus_0 }} == dev
+      is-staging: ${{ steps.tag.outpus_0 }} == staging
+      package: ${{ steps.tag.outputs._1 }}
+      environment: ${{ steps.tag.outputs._1 }}
+      dotenv: development
+
+  build:
+    name: Build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        node-version: [16]
+        os: [ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+      - run: |
+          echo "done"
