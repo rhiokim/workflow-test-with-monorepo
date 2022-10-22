@@ -1,3 +1,7 @@
+# https://docs.github.com/en/rest/reactions#create-reaction-for-an-issue-comment
+# https://octokit.github.io/rest.js/v19#reactions
+# https://github.com/actions/github-script
+
 name: Comments for CI/CD Pipeline
 
 on:
@@ -45,7 +49,6 @@ jobs:
 
             return pr.data.head.sha
 
-      # https://docs.github.com/en/rest/reactions#create-reaction-for-an-issue-comment
       - name: Reaction
         uses: actions/github-script@v6
         with:
@@ -58,20 +61,38 @@ jobs:
               content: 'rocket',
             })
 
+      - name: Create deploy ${{ steps.comment.outputs._2 }}-${{ steps.comment.outputs._1 }}
+        if: steps.comment.outputs._0 == '/deploy'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { owner, repo, number } = context.issue;
+            const tag = await github.rest.git.createTag({
+              owner,
+              repo,
+              tag: 'deploy/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}',
+              message: `Deploy ${{ steps.comment.outputs._2 }} to ${{ steps.comment.outputs._1 }} #${number}`,
+              object: '${{ steps.sha.outputs.result }}',
+              type: 'commit',
+              tagger: {
+                name: '${{ github.actor }}',
+                email: '${{ github.actor }}@users.noreply.github.com'
+              },
+            })
+
+      - name: Create ref
+        if: steps.comment.outputs._0 == '/deploy'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { owner, repo, number } = context.issue;
+            const tag = await github.rest.git.createRef({
+              owner,
+              repo,
+              ref: 'deploy/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}',
+              sha: '${{ steps.sha.outputs.result }}',
+            })
+
+
       - run: |
           echo "comment sha: ${{ steps.sha.outputs.result }}"
-      # - name: Build Docker ${{ steps.comment.outputs._1 }}
-      #   if: steps.comment.outputs._0 == '/release'
-      #   uses: benc-uk/workflow-dispatch@v1
-      #   with:
-      #     workflow: Build docker and create relase tag
-      #     token: ${{ secrets.PAT }}
-      #     inputs: '{"environment": "${{ steps.comment.outputs._1}}", "package": "${{ steps.comment.outputs._2}}", "ref": "${{ steps.comment-branch.outputs.head_ref }}", "sha": "${{ steps.comment-branch.outputs.head_sha }}"}'
-
-      # - name: Deploy via SSH ${{ steps.comment.outputs._1 }}
-      #   if: steps.comment.outputs._0 == '/deploy'
-      #   uses: benc-uk/workflow-dispatch@v1
-      #   with:
-      #     workflow: Deploy via SSH
-      #     token: ${{ secrets.PAT }}
-      #     inputs: '{"environment": "${{ steps.comment.outputs._1}}", "package": "${{ steps.comment.outputs._2}}", "ref": "${{ steps.comment-branch.outputs.head_ref }}", "sha": "${{ steps.comment-branch.outputs.head_sha }}"}'
