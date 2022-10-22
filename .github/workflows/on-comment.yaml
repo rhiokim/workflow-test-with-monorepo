@@ -96,7 +96,8 @@ jobs:
           git config user.email "${{ github.actor }}@users.noreply.github.com"
 
           git tag -a "deploy/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}" -m "Deploy ${{ steps.comment.outputs._2 }} to ${{ steps.comment.outputs._1 }} #${number}"
-          git push origin "deploy/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}" --force
+          git push --tags --force
+          # git push origin "deploy/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}" --force
 
       # - name: Create ref
       #   if: steps.comment.outputs._0 == '/deploy'
