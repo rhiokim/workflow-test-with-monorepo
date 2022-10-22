@@ -1,6 +1,6 @@
 name: On Build PR
 
-run-name: Build PR \#${{ inputs.issue }} by @${{ github.actor }}
+run-name: Build PR ${{ inputs.issue }} by @${{ github.actor }}
 
 on:
   workflow_dispatch:
@@ -58,14 +58,15 @@ jobs:
             ${{ runner.os }}-
 
       - name: Authenticate with private NPM package
-        run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.PAT }}" > ~/.npmrc
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.PAT }}" >> ~/.npmrc
+          echo "@rhiokim:registry=https://npm.pkg.github.com/" >> ~/.npmrc
 
       - name: Monorepo boostrap
         run: |
           npm install ci
-          npx lerna bootstrap
 
       - name: Lint & Test & Build
         run: |
-          npm run lint -w ${{ inputs.package }}
+          # npm run lint -w ${{ inputs.package }}
           npm run build -w ${{ inputs.package }}

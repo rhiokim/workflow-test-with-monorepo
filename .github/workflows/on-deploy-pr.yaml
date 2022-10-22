@@ -1,5 +1,7 @@
 name: On Deploy PR
 
+run-name: Deploy PR ${{ inputs.issue }} by @${{ github.actor }}
+
 on:
   workflow_dispatch:
     inputs:

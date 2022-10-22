@@ -5,7 +5,9 @@ on:
     branches: [main]
     tags:
       # aaa/v0.0.0, aaa/v0.0.0-rc1, bbb/v0.0.0-next.0
-      - '[-_.a-zA-Z]+\/v[0-9]+\.[0-9]+\.[0-9]+-*[-_.a-zA-Z]*'
+      # - '[-_.a-zA-Z]+\/v[0-9]+\.[0-9]+\.[0-9]+-*[-_.a-zA-Z]*'
+      - 'deploy/*'
+      - 'release/*'
 
 env:
   REGISTRY: 'ghcr.io'
@@ -22,11 +24,11 @@ jobs:
         os: [ubuntu-latest]
 
     steps:
-      - uses: jungwinter/split@v1
+      - uses: rhiokim/split-by@master
         id: branch
         with:
-          msg: ${{ github.ref }}
-          seperator: '/'
+          string: ${{ github.ref }}
+          split-by: '/'
 
       # TODO:
       # - 공통 모듈인 경우에는 `environment` 가 없을 수도 있다.
@@ -56,7 +58,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.PAT }}
 
       # reference - https://github.com/docker/metadata-action
       - name: Extract metadata (tags, labels) for Docker
@@ -80,5 +82,5 @@ jobs:
             environment=${{ env.environment }}
             dotenv=${{ env.dotenv }}
             package=${{ env.package }}
-            token=${{ secrets.GITHUB_TOKEN }}
+            token=${{ secrets.PAT }}
             sha=${{ github.sha }}

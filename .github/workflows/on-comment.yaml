@@ -4,11 +4,12 @@
 
 name: On Issue Comment
 
+run-name: Run command from comment /w PR `${{ github.event.issue.title }}` by @${{ github.actor }}
+
 on:
   issue_comment:
     types:
       - 'created'
-  workflow_dispatch:
 
 jobs:
   ci-cd-comment:
@@ -27,14 +28,14 @@ jobs:
           string: ${{ github.event.comment.body }}
           split-by: ' '
 
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 1
+      # - uses: actions/checkout@v3
+      #   with:
+      #     fetch-depth: 1
 
-      - name: 'Checkout issue branch'
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT }}
-        run: hub pr checkout ${{ github.event.issue.number }}
+      # - name: 'Checkout issue branch'
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.PAT }}
+      #   run: hub pr checkout ${{ github.event.issue.number }}
 
       - name: Build ${{ steps.comment.outputs._1 }}
         if: steps.comment.outputs._0 == '/build'
