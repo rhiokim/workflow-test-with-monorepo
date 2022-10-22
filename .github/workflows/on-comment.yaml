@@ -27,6 +27,15 @@ jobs:
           string: ${{ github.event.comment.body }}
           split-by: ' '
 
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: 'Checkout issue branch'
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+        run: hub pr checkout ${{ github.event.issue.number }}
+
       - name: Build ${{ steps.comment.outputs._1 }}
         if: steps.comment.outputs._0 == '/build'
         run: |
@@ -61,38 +70,59 @@ jobs:
               content: 'rocket',
             })
 
-      - name: Create deploy ${{ steps.comment.outputs._2 }}-${{ steps.comment.outputs._1 }}
-        if: steps.comment.outputs._0 == '/deploy'
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const { owner, repo, number } = context.issue;
-            const tag = await github.rest.git.createTag({
-              owner,
-              repo,
-              tag: 'deploy/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}',
-              message: `Deploy ${{ steps.comment.outputs._2 }} to ${{ steps.comment.outputs._1 }} #${number}`,
-              object: '${{ steps.sha.outputs.result }}',
-              type: 'commit',
-              tagger: {
-                name: '${{ github.actor }}',
-                email: '${{ github.actor }}@users.noreply.github.com'
-              },
-            })
+      # - name: Create deploy ${{ steps.comment.outputs._2 }}-${{ steps.comment.outputs._1 }}
+      #   if: steps.comment.outputs._0 == '/deploy'
+      #   uses: actions/github-script@v6
+      #   with:
+      #     script: |
+      #       const { owner, repo, number } = context.issue;
+      #       const tag = await github.rest.git.createTag({
+      #         owner,
+      #         repo,
+      #         tag: 'deploy/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}',
+      #         message: `Deploy ${{ steps.comment.outputs._2 }} to ${{ steps.comment.outputs._1 }} #${number}`,
+      #         object: '${{ steps.sha.outputs.result }}',
+      #         type: 'commit',
+      #         tagger: {
+      #           name: '${{ github.actor }}',
+      #           email: '${{ github.actor }}@users.noreply.github.com'
+      #         },
+      #       })
 
-      - name: Create ref
+      - name: Create deploy tag
         if: steps.comment.outputs._0 == '/deploy'
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const { owner, repo, number } = context.issue;
-            const tag = await github.rest.git.createRef({
-              owner,
-              repo,
-              ref: 'deploy/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}',
-              sha: '${{ steps.sha.outputs.result }}',
-            })
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
 
+          git tag -a "deploy/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}" -m "Deploy ${{ steps.comment.outputs._2 }} to ${{ steps.comment.outputs._1 }} #${number}"
+          git push origin "deploy/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}" --force
+
+      # - name: Create ref
+      #   if: steps.comment.outputs._0 == '/deploy'
+      #   uses: actions/github-script@v6
+      #   with:
+      #     script: |
+      #       const { owner, repo, number } = context.issue;
+      #       const tag = await github.rest.git.createRef({
+      #         owner,
+      #         repo,
+      #         ref: 'refs/tags/deploy/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}',
+      #         sha: '${{ steps.sha.outputs.result }}',
+      #       })
+
+      # - name: Update ref
+      #   if: steps.comment.outputs._0 == '/deploy'
+      #   uses: actions/github-script@v6
+      #   with:
+      #     script: |
+      #       const { owner, repo, number } = context.issue;
+      #       const tag = await github.rest.git.updateRef({
+      #         owner,
+      #         repo,
+      #         ref: 'refs/tags/deploy/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}',
+      #         sha: '${{ steps.sha.outputs.result }}',
+      #       })
 
       - run: |
           echo "comment sha: ${{ steps.sha.outputs.result }}"
