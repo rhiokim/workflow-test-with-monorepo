@@ -1,6 +1,6 @@
 name: On Build PR
 
-run-name: Build PR \#${{ inputs.issue }} by @${{ github.actor }}
+run-name: Build PR #${{ inputs.issue }} by @${{ github.actor }}
 
 on:
   workflow_dispatch:
@@ -63,7 +63,6 @@ jobs:
       - name: Monorepo boostrap
         run: |
           npm install ci
-          npx lerna bootstrap
 
       - name: Lint & Test & Build
         run: |
