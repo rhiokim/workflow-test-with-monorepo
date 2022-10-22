@@ -1,0 +1,77 @@
+name: Comments for CI/CD Pipeline
+
+on:
+  issue_comment:
+    types:
+      - 'created'
+  workflow_dispatch:
+
+jobs:
+  ci-cd-comment:
+    if: ${{ github.event.issue.state == 'open' && github.event.issue.pull_request }}
+    name: Parse comment
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        node-version: [16]
+        os: [ubuntu-latest]
+
+    steps:
+      - uses: rhiokim/split-by@master
+        id: comment
+        with:
+          string: ${{ github.event.comment.body }}
+          split-by: ' '
+
+      - name: Build ${{ steps.comment.outputs._1 }}
+        if: steps.comment.outputs._0 == '/build'
+        run: |
+          echo ${{ steps.comment.outputs._0 }}
+          echo ${{ steps.comment.outputs._1 }}
+          echo ${{ steps.comment.outputs._2 }}
+
+      - name: Get PR SHA
+        id: sha
+        uses: actions/github-script@v6
+        with:
+          result-encoding: string
+          script: |
+            const { owner, repo, number } = context.issue;
+            const pr = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number: number,
+            });
+
+            return pr.data.head.sha
+
+      # https://docs.github.com/en/rest/reactions#create-reaction-for-an-issue-comment
+      - name: Reaction
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { owner, repo } = context.issue;
+            const reaction = await github.rest.reactions.createForIssueComment({
+              owner,
+              repo,
+              comment_id: ${{ github.event.comment.id }},
+              content: 'rocket',
+            })
+
+      - run: |
+          echo "comment sha: ${{ steps.sha.outputs.result }}"
+      # - name: Build Docker ${{ steps.comment.outputs._1 }}
+      #   if: steps.comment.outputs._0 == '/release'
+      #   uses: benc-uk/workflow-dispatch@v1
+      #   with:
+      #     workflow: Build docker and create relase tag
+      #     token: ${{ secrets.PAT }}
+      #     inputs: '{"environment": "${{ steps.comment.outputs._1}}", "package": "${{ steps.comment.outputs._2}}", "ref": "${{ steps.comment-branch.outputs.head_ref }}", "sha": "${{ steps.comment-branch.outputs.head_sha }}"}'
+
+      # - name: Deploy via SSH ${{ steps.comment.outputs._1 }}
+      #   if: steps.comment.outputs._0 == '/deploy'
+      #   uses: benc-uk/workflow-dispatch@v1
+      #   with:
+      #     workflow: Deploy via SSH
+      #     token: ${{ secrets.PAT }}
+      #     inputs: '{"environment": "${{ steps.comment.outputs._1}}", "package": "${{ steps.comment.outputs._2}}", "ref": "${{ steps.comment-branch.outputs.head_ref }}", "sha": "${{ steps.comment-branch.outputs.head_sha }}"}'

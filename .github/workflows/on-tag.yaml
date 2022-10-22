@@ -3,8 +3,8 @@ name: Release /w tag
 on:
   push:
     tags:
-      - dev/**
-      - staging/**
+      - deploy/dev/**
+      - deploy/staging/**
 
 env:
   REGISTRY: 'ghcr.io'
@@ -28,10 +28,9 @@ jobs:
           split-by: '/'
 
     outputs:
-      is-dev: contains(steps.tag.outpus_0, 'dev')
-      is-staging: contains(steps.tag.outpus_0, 'staging')
-      package: ${{ steps.tag.outputs._1 }}
-      environment: ${{ steps.tag.outputs._0 }}
+      action: ${{ steps.tag.outputs._0 }}
+      environment: ${{ steps.tag.outputs._1 }}
+      package: ${{ steps.tag.outputs._2 }}
       dotenv: development
 
   build:
@@ -49,7 +48,5 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 1
       - run: |
-          echo ${{ needs.init.outputs.is-dev }}
-          echo ${{ needs.init.outputs.is-staging }}
           echo ${{ needs.init.outputs.package }}
           echo ${{ needs.init.outputs.environment }}
