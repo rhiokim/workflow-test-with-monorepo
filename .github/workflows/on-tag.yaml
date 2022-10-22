@@ -3,8 +3,8 @@ name: Release /w tag
 on:
   push:
     tags:
-      - deploy/dev/**
-      - deploy/staging/**
+      - deploy/dev/*
+      - deploy/staging/*
 
 env:
   REGISTRY: 'ghcr.io'
