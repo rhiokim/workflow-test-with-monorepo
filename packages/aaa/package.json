@@ -1,5 +1,6 @@
 {
   "private": true,
+  "name": "aaa",
   "type": "module",
   "scripts": {
     "dev": "next",
