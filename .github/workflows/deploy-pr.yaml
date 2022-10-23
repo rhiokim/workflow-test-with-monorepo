@@ -1,0 +1,38 @@
+name: Deploy PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: 'pull request issue number'
+        required: true
+      environment:
+        description: 'deploy environment'
+        required: true
+      package:
+        description: 'package'
+        required: true
+      action:
+        description: 'action'
+        required: false
+
+env:
+  REGISTRY: 'ghcr.io'
+  GHCR_PACKAGE_BASE_URL: 'https://github.com/rhiokim/seed-monorepo/pkgs/container/seed-monorepo%2F'
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        node-version: [16]
+        os: [ubuntu-latest]
+
+    steps:
+      - name: Print Inputs
+        run: |
+          echo "issue number: ${{ inputs.issue }}"
+          echo "environment: ${{ inputs.environment }}"
+          echo "package: ${{ inputs.package }}"
+          echo "action: ${{ inputs.action }}"

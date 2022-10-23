@@ -70,6 +70,7 @@ jobs:
               content: 'rocket',
             })
 
+
       # - name: Create deploy ${{ steps.comment.outputs._2 }}-${{ steps.comment.outputs._1 }}
       #   if: steps.comment.outputs._0 == '/deploy'
       #   uses: actions/github-script@v6
@@ -99,6 +100,15 @@ jobs:
           git push --tags --force
           # git push origin "deploy/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}" --force
 
+      - name: Depoly
+        uses: actions/github-script@v6
+        with:
+          script: |
+            hub workflow run deploy-pr.yaml \
+              -f issue=${{ github.event.issue.number }} \
+              -f environment=${{ steps.comment.outputs._1 }} \
+              -f package=${{ steps.comment.outputs._2 }} \
+              -f action=deploy \
       # - name: Create ref
       #   if: steps.comment.outputs._0 == '/deploy'
       #   uses: actions/github-script@v6
