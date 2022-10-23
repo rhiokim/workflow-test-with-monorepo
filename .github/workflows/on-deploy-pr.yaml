@@ -43,17 +43,17 @@ jobs:
           echo "package: ${{ inputs.package }}"
           echo "action: ${{ inputs.action }}"
 
-      - name: Set env `dotenv`
+      - name: Set env `dotenv=development`
         if: inputs.environment == 'dev'
         run: |
           echo "dotenv=development" >> $GITHUB_ENV
 
-      - name: Set env `dotenv`
+      - name: Set env `dotenv=staging`
         if: inputs.environment == 'staging'
         run: |
           echo "dotenv=staging" >> $GITHUB_ENV
 
-      - name: Set env `dotenv`
+      - name: Set env `dotenv=production`
         if: inputs.environment == 'prod'
         run: |
           echo "dotenv=production" >> $GITHUB_ENV

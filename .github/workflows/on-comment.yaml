@@ -28,14 +28,6 @@ jobs:
           string: ${{ github.event.comment.body }}
           split-by: ' '
 
-      # - uses: actions/checkout@v3
-      #   with:
-      #     fetch-depth: 1
-
-      # - name: 'Checkout issue branch'
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.PAT }}
-      #   run: hub pr checkout ${{ github.event.issue.number }}
 
       - name: Build ${{ steps.comment.outputs._1 }}
         if: steps.comment.outputs._0 == '/build'
@@ -107,15 +99,24 @@ jobs:
               }
             })
 
-      # - name: Create deploy tag
-      #   if: steps.comment.outputs._0 == '/deploy'
-      #   run: |
-      #     git config user.name "${{ github.actor }}"
-      #     git config user.email "${{ github.actor }}@users.noreply.github.com"
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
 
-      #     git tag -a "deploy/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}" -m "Deploy ${{ steps.comment.outputs._2 }} to ${{ steps.comment.outputs._1 }} #${number}"
-      #     git push --tags --force
-      #     # git push origin "deploy/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}" --force
+      - name: 'Checkout issue branch'
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+        run: hub pr checkout ${{ github.event.issue.number }}
+
+      - name: Create release tag
+        if: steps.comment.outputs._0 == '/release'
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+          git tag -a "release/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}" -m "Release ${{ steps.comment.outputs._2 }} to ${{ steps.comment.outputs._1 }} #${number}"
+          git push --tags --force
+          # git push origin "release/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}" --force
 
       # https://github.blog/changelog/2022-09-08-github-actions-use-github_token-with-workflow_dispatch-and-repository_dispatch/
       # https://docs.github.com/en/rest/actions/workflows#create-a-workflow-dispatch-event
