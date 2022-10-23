@@ -43,8 +43,23 @@ jobs:
           echo ${{ steps.comment.outputs._1 }}
           echo ${{ steps.comment.outputs._2 }}
 
-      - name: Get PR SHA
-        id: sha
+      # - name: Get PR SHA
+      #   id: sha
+      #   uses: actions/github-script@v6
+      #   with:
+      #     result-encoding: string
+      #     script: |
+      #       const { owner, repo, number } = context.issue;
+      #       const pr = await github.rest.pulls.get({
+      #         owner,
+      #         repo,
+      #         pull_number: number,
+      #       });
+
+      #       return pr.data.head.sha
+
+      - name: Get PR Ref
+        id: get-pr-ref
         uses: actions/github-script@v6
         with:
           result-encoding: string
@@ -56,7 +71,8 @@ jobs:
               pull_number: number,
             });
 
-            return pr.data.head.sha
+            return pr.data.head.ref
+
 
       # https://docs.github.com/en/rest/reactions#create-reaction-for-an-issue-comment
       - name: Reaction
@@ -71,20 +87,40 @@ jobs:
               content: 'rocket',
             })
 
-      - name: Create deploy tag
-        if: steps.comment.outputs._0 == '/deploy'
-        run: |
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
+      - name: Trigger Build Workflow
+        if: steps.comment.outputs._0 == '/build'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { owner, repo, number } = context.issue;
+            await github.rest.actions.createWorkflowDispatch({
+              owner,
+              repo,
+              workflow_id: 'on-build-pr.yaml',
+              ref: '${{ steps.get-pr-ref.outputs.result }}',
+              inputs: {
+                issue: String(number),
+                environment: '${{ steps.comment.outputs._1 }}',
+                package: '${{ steps.comment.outputs._2 }}',
+                action: 'build',
+              }
+            })
 
-          git tag -a "deploy/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}" -m "Deploy ${{ steps.comment.outputs._2 }} to ${{ steps.comment.outputs._1 }} #${number}"
-          git push --tags --force
-          # git push origin "deploy/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}" --force
+      # - name: Create deploy tag
+      #   if: steps.comment.outputs._0 == '/deploy'
+      #   run: |
+      #     git config user.name "${{ github.actor }}"
+      #     git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      #     git tag -a "deploy/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}" -m "Deploy ${{ steps.comment.outputs._2 }} to ${{ steps.comment.outputs._1 }} #${number}"
+      #     git push --tags --force
+      #     # git push origin "deploy/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}" --force
 
       # https://github.blog/changelog/2022-09-08-github-actions-use-github_token-with-workflow_dispatch-and-repository_dispatch/
       # https://docs.github.com/en/rest/actions/workflows#create-a-workflow-dispatch-event
       # https://docs.github.com/en/rest/pulls/pulls
       - name: Trigger Deploy Workflow
+        if: steps.comment.outputs._0 == '/deploy'
         uses: actions/github-script@v6
         with:
           script: |
@@ -93,7 +129,7 @@ jobs:
               owner,
               repo,
               workflow_id: 'on-deploy-pr.yaml',
-              ref: 'deploy/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}',
+              ref: '${{ steps.get-pr-ref.outputs.result }}',
               inputs: {
                 issue: String(number),
                 environment: '${{ steps.comment.outputs._1 }}',
