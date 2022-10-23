@@ -63,6 +63,8 @@ jobs:
           echo "@rhiokim:registry=https://npm.pkg.github.com/" >> ~/.npmrc
 
       - name: Monorepo boostrap
+        # env:
+        #   NODE_AUTH_TOKEN: ${{ secrets.PAT }}
         run: |
           npm install ci
 

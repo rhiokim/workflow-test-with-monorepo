@@ -42,6 +42,20 @@ git tag -am 'bbb/v1.1.2'
 #  - owner/repo/bbb:short-sha
 #  - owner/repo/bbb:latest
 #  - owner/repo/bbb:v1.1.2
+
+# Build
+git checkout feature/aaa/issue-1234
+gh pr comment -b '/build'
+gh pr comment -b '/build dev aaa'
+
+git checkout fix/aaa/issue-1235
+gh pr comment -b '/build'
+gh pr comment -b '/build dev aaa'
+
+# Deploy
+git checkout feature/bbb/issue-1236
+gh pr comment -b '/deploy'
+gh pr comment -b '/deploy dev bbb'
 ```
 
 ## Actions
