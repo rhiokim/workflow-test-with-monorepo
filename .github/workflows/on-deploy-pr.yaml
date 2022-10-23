@@ -1,0 +1,94 @@
+name: On Deploy PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: 'pull request issue number'
+        required: true
+      environment:
+        description: 'deploy environment'
+        required: true
+      package:
+        description: 'package'
+        required: true
+      action:
+        description: 'action'
+        required: false
+
+env:
+  REGISTRY: 'ghcr.io'
+  GHCR_PACKAGE_BASE_URL: 'https://github.com/rhiokim/seed-monorepo/pkgs/container/seed-monorepo%2F'
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        node-version: [16]
+        os: [ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: Print Inputs
+        run: |
+          echo "issue number: ${{ inputs.issue }}"
+          echo "environment: ${{ inputs.environment }}"
+          echo "package: ${{ inputs.package }}"
+          echo "action: ${{ inputs.action }}"
+
+      - name: Set env `dotenv`
+        if: inputs.environment == 'dev'
+        run: |
+          echo "dotenv=development" >> $GITHUB_ENV
+
+      - name: Set env `dotenv`
+        if: inputs.environment == 'staging'
+        run: |
+          echo "dotenv=staging" >> $GITHUB_ENV
+
+      - name: Set env `dotenv`
+        if: inputs.environment == 'prod'
+        run: |
+          echo "dotenv=production" >> $GITHUB_ENV
+
+      - name: Set up Docker Buildx environment
+        uses: docker/setup-buildx-action@v2
+
+      # reference - https://github.com/docker/login-action#github-container-registry
+      # - https://docs.github.com/en/packages/managing-github-packages-using-github-actions-workflows/publishing-and-installing-a-package-with-github-actions#upgrading-a-workflow-that-accesses-ghcrio
+      - name: Login to Github Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.PAT }}
+
+      # reference - https://github.com/docker/metadata-action
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ inputs.package }}-${{ inputs.environment }}
+          tags: |
+            type=sha,format=short
+            type=raw,pr-${{ inputs.issue }}
+
+      # reference - https://github.com/docker/build-push-action
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v3
+        with:
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            environment=${{ inputs.environment }}
+            dotenv=${{ env.dotenv }}
+            package=${{ inputs.package }}
+            token=${{ secrets.PAT }}
+            sha=${{ github.sha }}
+

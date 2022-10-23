@@ -2,7 +2,7 @@
 # https://octokit.github.io/rest.js/v19#reactions
 # https://github.com/actions/github-script
 
-name: Comments for CI/CD Pipeline
+name: On Issue Comment
 
 on:
   issue_comment:
@@ -12,7 +12,7 @@ on:
 
 jobs:
   ci-cd-comment:
-    if: ${{ github.event.issue.state == 'open' && github.event.issue.pull_request }}
+    if: ${{ github.event.issue.state == 'open' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/') }}
     name: Parse comment
     runs-on: ${{ matrix.os }}
     strategy:
@@ -58,6 +58,7 @@ jobs:
 
             return pr.data.head.sha
 
+      # https://docs.github.com/en/rest/reactions#create-reaction-for-an-issue-comment
       - name: Reaction
         uses: actions/github-script@v6
         with:
@@ -70,25 +71,6 @@ jobs:
               content: 'rocket',
             })
 
-      # - name: Create deploy ${{ steps.comment.outputs._2 }}-${{ steps.comment.outputs._1 }}
-      #   if: steps.comment.outputs._0 == '/deploy'
-      #   uses: actions/github-script@v6
-      #   with:
-      #     script: |
-      #       const { owner, repo, number } = context.issue;
-      #       const tag = await github.rest.git.createTag({
-      #         owner,
-      #         repo,
-      #         tag: 'deploy/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}',
-      #         message: `Deploy ${{ steps.comment.outputs._2 }} to ${{ steps.comment.outputs._1 }} #${number}`,
-      #         object: '${{ steps.sha.outputs.result }}',
-      #         type: 'commit',
-      #         tagger: {
-      #           name: '${{ github.actor }}',
-      #           email: '${{ github.actor }}@users.noreply.github.com'
-      #         },
-      #       })
-
       - name: Create deploy tag
         if: steps.comment.outputs._0 == '/deploy'
         run: |
@@ -99,31 +81,23 @@ jobs:
           git push --tags --force
           # git push origin "deploy/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}" --force
 
-      # - name: Create ref
-      #   if: steps.comment.outputs._0 == '/deploy'
-      #   uses: actions/github-script@v6
-      #   with:
-      #     script: |
-      #       const { owner, repo, number } = context.issue;
-      #       const tag = await github.rest.git.createRef({
-      #         owner,
-      #         repo,
-      #         ref: 'refs/tags/deploy/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}',
-      #         sha: '${{ steps.sha.outputs.result }}',
-      #       })
-
-      # - name: Update ref
-      #   if: steps.comment.outputs._0 == '/deploy'
-      #   uses: actions/github-script@v6
-      #   with:
-      #     script: |
-      #       const { owner, repo, number } = context.issue;
-      #       const tag = await github.rest.git.updateRef({
-      #         owner,
-      #         repo,
-      #         ref: 'refs/tags/deploy/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}',
-      #         sha: '${{ steps.sha.outputs.result }}',
-      #       })
-
-      - run: |
-          echo "comment sha: ${{ steps.sha.outputs.result }}"
+      # https://github.blog/changelog/2022-09-08-github-actions-use-github_token-with-workflow_dispatch-and-repository_dispatch/
+      # https://docs.github.com/en/rest/actions/workflows#create-a-workflow-dispatch-event
+      # https://docs.github.com/en/rest/pulls/pulls
+      - name: Trigger Deploy Workflow
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { owner, repo, number } = context.issue;
+            await github.rest.actions.createWorkflowDispatch({
+              owner,
+              repo,
+              workflow_id: 'on-deploy-pr.yaml',
+              ref: 'deploy/${{ steps.comment.outputs._1 }}/${{ steps.comment.outputs._2 }}',
+              inputs: {
+                issue: String(number),
+                environment: '${{ steps.comment.outputs._1 }}',
+                package: '${{ steps.comment.outputs._2 }}',
+                action: 'deploy',
+              }
+            })
